@@ -16,20 +16,25 @@ Na GitHub plik APK powinien byc dolaczany jako zalacznik do sekcji **Releases**.
 
 ## Zrzuty ekranu
 
-| Ekran glowny | Poziomnica | Powierzchnia |
+| Ekran glowny | Poziomnica | Poziomnica poziomo |
 |---|---|---|
-| <img src="docs/screenshots/01-home.jpg" width="220"> | <img src="docs/screenshots/02-level.jpg" width="220"> | <img src="docs/screenshots/03-surface.jpg" width="220"> |
-| Modulowy ekran startowy z kafelkami pomiarow i narzedzi. | Klasyczna poziomnica z celem, tolerancja, HOLD, dzwiekiem i wibracja. | Okragla poziomnica do stolow, pralek, maszyn i innych plaskich powierzchni. |
+| <img src="docs/screenshots/01-home.jpg" width="220"> | <img src="docs/screenshots/02-level-portrait.jpg" width="220"> | <img src="docs/screenshots/03-level-landscape.jpg" width="220"> |
+| Modulowy ekran startowy z kafelkami pomiarow i narzedzi. | Klasyczna poziomnica w pionowej orientacji telefonu. | Poziomnica po obrocie telefonu na dluga krawedz. |
 
-| Aparat | Spadek | Katomierz |
+| Powierzchnia | Pion | Spadek |
 |---|---|---|
-| <img src="docs/screenshots/05-camera.jpg" width="220"> | <img src="docs/screenshots/06-slope.jpg" width="220"> | <img src="docs/screenshots/07-protractor.jpg" width="220"> |
-| CameraX z siatka, liniami poziomu/pionu, latarka, blokada ekspozycji i zdjeciami z nakladka. | Spadek w stopniach, procentach, mm/m i cm/m, z przeliczeniem na cala dlugosc odcinka. | Pomiar kata miedzy powierzchnia bazowa i drugim nachyleniem. |
+| <img src="docs/screenshots/04-surface.jpg" width="220"> | <img src="docs/screenshots/05-plumb.jpg" width="220"> | <img src="docs/screenshots/06-slope.jpg" width="220"> |
+| Okragla poziomnica do stolow, pralek, maszyn i innych plaskich powierzchni. | Pomiar pionu na krawedzi telefonu. | Spadek w stopniach, procentach, mm/m i cm/m. |
 
-| Ustawienia | Historia | FAQ i przeliczniki |
+| Spadek z dlugoscia | Katomierz | Luksomierz |
 |---|---|---|
-| <img src="docs/screenshots/08-settings.jpg" width="220"> | <img src="docs/screenshots/09-history.jpg" width="220"> | <img src="docs/screenshots/11-calculators.jpg" width="220"> |
-| Sekcje wygladu, pomiaru, dzwieku, aparatu i uprawnien. | Lokalna historia pomiarow z podgladem, eksportem i udostepnianiem. | Przeliczniki dlugosci, spadku i roznicy wysokosci na odcinku. |
+| <img src="docs/screenshots/07-slope-length.jpg" width="220"> | <img src="docs/screenshots/08-protractor.jpg" width="220"> | <img src="docs/screenshots/09-light.jpg" width="220"> |
+| Przeliczenie spadku na roznice wysokosci na calej trasie. | Pomiar kata miedzy powierzchnia bazowa i drugim nachyleniem. | Pomiar natezenia oswietlenia z wartosciami min, srednia i max. |
+
+| Przeliczniki spadku | Przeliczniki dlugosci |
+|---|---|
+| <img src="docs/screenshots/10-calculators-top.jpg" width="220"> | <img src="docs/screenshots/11-calculators-units.jpg" width="220"> |
+| Obliczanie roznicy wysokosci zadanego spadku na calym odcinku. | Przeliczanie jednostek dlugosci oraz kata na spadek. |
 
 ## Glowne funkcje
 
