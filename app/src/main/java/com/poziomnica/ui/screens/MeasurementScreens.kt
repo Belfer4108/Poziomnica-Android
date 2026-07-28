@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -214,11 +215,18 @@ fun MeasurementScaffold(nav: NavHostController, title: String, compact: Boolean 
             CompactMeasurementTopBar(nav, title)
         }
     ) { padding ->
-        Column(
-            Modifier.padding(padding).padding(if (compact) 8.dp else 16.dp).fillMaxSize().verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 14.dp),
-            content = content
-        )
+        BoxWithConstraints(Modifier.padding(padding).fillMaxSize()) {
+            val tight = compact || maxHeight < 640.dp || maxWidth < 380.dp
+            Column(
+                Modifier
+                    .padding(if (tight) 6.dp else 14.dp)
+                    .navigationBarsPadding()
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(if (tight) 6.dp else 12.dp),
+                content = content
+            )
+        }
     }
 }
 
@@ -276,7 +284,13 @@ fun MetricTile(label: String, value: String, modifier: Modifier = Modifier) {
     Surface(modifier = modifier, tonalElevation = 2.dp, shape = MaterialTheme.shapes.medium) {
         Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
+            Text(
+                value,
+                style = if (value.length > 14) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

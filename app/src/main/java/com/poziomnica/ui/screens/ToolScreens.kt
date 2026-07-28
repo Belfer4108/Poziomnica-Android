@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -114,11 +116,17 @@ fun ToolScaffold(nav: NavHostController, title: String, content: @Composable Col
     Scaffold(
         topBar = { CompactMeasurementTopBar(nav, title) }
     ) { padding ->
-        Column(
-            Modifier.padding(padding).padding(16.dp).fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-            content = content
-        )
+        BoxWithConstraints(Modifier.padding(padding).fillMaxSize()) {
+            val tight = maxHeight < 640.dp || maxWidth < 380.dp
+            Column(
+                Modifier
+                    .padding(if (tight) 8.dp else 16.dp)
+                    .navigationBarsPadding()
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(if (tight) 8.dp else 14.dp),
+                content = content
+            )
+        }
     }
 }
 

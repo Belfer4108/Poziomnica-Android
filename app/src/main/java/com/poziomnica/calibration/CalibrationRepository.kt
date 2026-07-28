@@ -88,14 +88,19 @@ class CalibrationRepository(private val context: Context) {
     private suspend fun upsertMerged(name: String, transform: (CalibrationProfile) -> CalibrationProfile) {
         mutate { list ->
             val active = list.firstOrNull { it.isActive } ?: CalibrationProfile("factory", "Fabryczna", isDefault = true)
+            val activeName = active.name.takeUnless { active.id == "factory" || it.isBlank() } ?: name
             val merged = transform(active).copy(
-                id = UUID.randomUUID().toString(),
-                name = name,
+                id = active.id.takeUnless { it == "factory" } ?: UUID.randomUUID().toString(),
+                name = activeName,
                 isDefault = false,
                 isActive = true,
                 lastCalibratedAt = System.currentTimeMillis()
             )
-            list.map { it.copy(isActive = false) } + merged
+            if (active.id == "factory") {
+                list.map { it.copy(isActive = false) } + merged
+            } else {
+                list.map { if (it.id == active.id) merged else it.copy(isActive = false) }
+            }
         }
     }
 

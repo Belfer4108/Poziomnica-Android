@@ -996,7 +996,6 @@ fun CalibrationScreen(nav: NavHostController, vm: CalibrationViewModel) {
                     CalibrationProfileCard(
                         profile = p,
                         onActivate = { vm.activate(p.id) },
-                        onDefault = { vm.setDefault(p.id) },
                         onRename = { renameProfile = p },
                         onDelete = { deleteProfile = p }
                     )
@@ -1083,7 +1082,6 @@ fun CalibrationScreen(nav: NavHostController, vm: CalibrationViewModel) {
 fun CalibrationProfileCard(
     profile: com.poziomnica.domain.CalibrationProfile,
     onActivate: () -> Unit,
-    onDefault: () -> Unit,
     onRename: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -1095,9 +1093,8 @@ fun CalibrationProfileCard(
                     Text(profile.name, style = MaterialTheme.typography.titleMedium)
                     Text(
                         when {
-                            profile.isActive -> "Używany automatycznie"
-                            profile.isDefault -> "Domyślny zestaw"
-                            else -> "Zapisany zestaw"
+                            profile.isActive -> "Aktualny kejs - korekta dobierana automatycznie"
+                            else -> "Zapisany zestaw dla innego kejsa"
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1122,13 +1119,8 @@ fun CalibrationProfileCard(
                     FilledTonalButton(onClick = onActivate, modifier = Modifier.height(36.dp), contentPadding = PaddingValues(horizontal = 10.dp)) {
                         Icon(Icons.Default.CheckCircle, null, Modifier.size(16.dp))
                         Spacer(Modifier.width(5.dp))
-                        Text("Użyj zestawu")
+                        Text("Użyj tego kejsa")
                     }
-                }
-                FilledTonalButton(onClick = onDefault, modifier = Modifier.height(36.dp), contentPadding = PaddingValues(horizontal = 10.dp)) {
-                    Icon(Icons.Default.PushPin, null, Modifier.size(16.dp))
-                    Spacer(Modifier.width(5.dp))
-                    Text(if (profile.isDefault) "Domyślny" else "Ustaw domyślny")
                 }
                 if (!profile.isDefault) {
                     FilledTonalButton(onClick = onRename, modifier = Modifier.height(36.dp), contentPadding = PaddingValues(horizontal = 10.dp)) {
@@ -1339,7 +1331,7 @@ fun faqItems(): List<FaqItem> = listOf(
     ),
     FaqItem(
         "Kalibracja",
-        "Kalibracja kompensuje etui, wystający aparat i nierówności obudowy. Dla tylnej obudowy wykonaj cztery pomiary na tej samej powierzchni, obracając telefon co 90°. Dla krawędzi wykonaj dwa pomiary na tej samej krawędzi po obrocie telefonu o 180°. Jeden zestaw kalibracji może zawierać korektę tylnej obudowy oraz krawędzi, a aplikacja podczas pomiaru automatycznie dobiera właściwą korektę do aktualnego ułożenia telefonu. Po zmianie etui warto utworzyć osobny zestaw i nazwać go zgodnie z używaną obudową."
+        "Kalibracja kompensuje etui, wystający aparat i nierówności obudowy. Dla tylnej obudowy wykonaj cztery pomiary na tej samej powierzchni, obracając telefon co 90°. Dla krawędzi wykonaj dwa pomiary na tej samej krawędzi po obrocie telefonu o 180°. Jeden zestaw kalibracji odpowiada jednemu kejsowi i może zawierać korektę tylnej obudowy oraz krawędzi. Podczas pomiaru aplikacja sama dobiera korektę tyłu, długiej albo krótkiej krawędzi na podstawie aktualnego ułożenia telefonu. Po zmianie etui utwórz albo wybierz właściwy zestaw kejsa i wykonaj kalibrację ponownie."
     ),
     FaqItem(
         "Ustawienia",
