@@ -953,6 +953,7 @@ fun CalibrationScreen(nav: NavHostController, vm: CalibrationViewModel) {
     var renameProfile by remember { mutableStateOf<com.poziomnica.domain.CalibrationProfile?>(null) }
     var deleteProfile by remember { mutableStateOf<com.poziomnica.domain.CalibrationProfile?>(null) }
     var restoreConfirm by remember { mutableStateOf(false) }
+    var resetFlowConfirm by remember { mutableStateOf<String?>(null) }
     Scaffold(topBar = { CompactMeasurementTopBar(nav, "Kalibracja") }) { padding ->
         Column(Modifier.padding(padding).padding(16.dp).fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SettingsSection("Tylna obudowa 4x90°")
@@ -964,7 +965,7 @@ fun CalibrationScreen(nav: NavHostController, vm: CalibrationViewModel) {
             Text("Aktualnie: X ${"%.2f".format(state.reading.surfaceX)}°   Y ${"%.2f".format(state.reading.surfaceY)}°   ${state.reading.supportEdge}", style = MaterialTheme.typography.bodySmall)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = vm::capturePlanePoint, enabled = !state.complete, modifier = Modifier.weight(1f)) { Text("Zapisz punkt") }
-                OutlinedButton(onClick = vm::resetPlaneCalibrationFlow, modifier = Modifier.weight(1f)) { Text("Od nowa") }
+                OutlinedButton(onClick = { resetFlowConfirm = "plane" }, modifier = Modifier.weight(1f)) { Text("Od nowa") }
             }
             Button(onClick = vm::savePlaneCalibration, enabled = state.complete, modifier = Modifier.fillMaxWidth()) { Text("Zatwierdź tylną obudowę") }
             HorizontalDivider()
@@ -976,39 +977,28 @@ fun CalibrationScreen(nav: NavHostController, vm: CalibrationViewModel) {
             Text("Wykryta krawędź: ${state.reading.supportEdge}", style = MaterialTheme.typography.bodySmall)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = vm::captureEdgePoint, enabled = !state.edgeComplete, modifier = Modifier.weight(1f)) { Text("Zapisz punkt") }
-                OutlinedButton(onClick = vm::resetEdgeCalibrationFlow, modifier = Modifier.weight(1f)) { Text("Od nowa") }
+                OutlinedButton(onClick = { resetFlowConfirm = "edge" }, modifier = Modifier.weight(1f)) { Text("Od nowa") }
             }
             Button(onClick = vm::saveEdgeCalibration, enabled = state.edgeComplete, modifier = Modifier.fillMaxWidth()) { Text("Zatwierdź krawędź") }
             HorizontalDivider()
             SettingsSection("Szybkie zero")
-            Text("Ustawia aktualne położenie jako zero dla aktywnego profilu.", style = MaterialTheme.typography.bodyMedium)
+            Text("Awaryjnie zapisuje aktualne położenie jako nowy zestaw odniesienia. Do normalnej pracy używaj kalibracji 4x90° i 2x180°; aplikacja sama dobiera korektę do tylnej obudowy albo krawędzi.", style = MaterialTheme.typography.bodyMedium)
             OutlinedButton(onClick = { vm.quick() }, modifier = Modifier.fillMaxWidth()) { Text("Ustaw aktualne jako zero") }
-            SettingsSection("Profile")
+            SettingsSection("Zestawy kalibracji")
+            Text("Jeden zestaw może zawierać korektę tylnej obudowy oraz krawędzi. Podczas pomiaru aplikacja automatycznie wybiera właściwą korektę na podstawie ułożenia telefonu.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             OutlinedButton(onClick = { newProfileDialog = true }, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Default.Add, null)
                 Spacer(Modifier.width(8.dp))
-                Text("Dodaj profil z aktualnych ustawień")
+                Text("Dodaj zestaw z aktualnych ustawień")
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 profiles.forEach { p ->
-                    ListItem(
-                        headlineContent = { Text(p.name) },
-                        supportingContent = {
-                            Text(
-                                "Tył pitch ${"%.2f".format(p.offsetPitch)}°, roll ${"%.2f".format(p.offsetRoll)}°; " +
-                                    "długa ${"%.2f".format(p.longEdgeOffset)}°, krótka ${"%.2f".format(p.shortEdgeOffset)}°; " +
-                                    "ostatnia: ${if (p.lastCalibratedAt == 0L) "brak" else SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(java.util.Date(p.lastCalibratedAt))}"
-                            )
-                        },
-                        leadingContent = { Icon(if (p.isActive) Icons.Default.CheckCircle else Icons.Default.Tune, null) },
-                        trailingContent = {
-                            Row {
-                                IconButton(onClick = { vm.activate(p.id) }) { Icon(Icons.Default.RadioButtonChecked, "Aktywuj") }
-                                IconButton(onClick = { vm.setDefault(p.id) }) { Icon(Icons.Default.PushPin, "Domyślny") }
-                                if (!p.isDefault) IconButton(onClick = { renameProfile = p }) { Icon(Icons.Default.Edit, "Zmień nazwę") }
-                                if (!p.isDefault) IconButton(onClick = { deleteProfile = p }) { Icon(Icons.Default.Delete, "Usuń") }
-                            }
-                        }
+                    CalibrationProfileCard(
+                        profile = p,
+                        onActivate = { vm.activate(p.id) },
+                        onDefault = { vm.setDefault(p.id) },
+                        onRename = { renameProfile = p },
+                        onDelete = { deleteProfile = p }
                     )
                 }
             }
@@ -1064,6 +1054,96 @@ fun CalibrationScreen(nav: NavHostController, vm: CalibrationViewModel) {
             },
             dismissButton = { TextButton(onClick = { restoreConfirm = false }) { Text("Anuluj") } }
         )
+    }
+    resetFlowConfirm?.let { target ->
+        AlertDialog(
+            onDismissRequest = { resetFlowConfirm = null },
+            title = { Text("Rozpocząć kalibrację od nowa?") },
+            text = {
+                Text(
+                    if (target == "plane") {
+                        "Bieżące punkty kalibracji tylnej obudowy zostaną wyczyszczone. Zapisane wcześniej zestawy kalibracji pozostaną, dopóki nie zatwierdzisz nowej kalibracji albo ich nie usuniesz."
+                    } else {
+                        "Bieżące punkty kalibracji krawędzi zostaną wyczyszczone. Zapisane wcześniej zestawy kalibracji pozostaną, dopóki nie zatwierdzisz nowej kalibracji albo ich nie usuniesz."
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (target == "plane") vm.resetPlaneCalibrationFlow() else vm.resetEdgeCalibrationFlow()
+                    resetFlowConfirm = null
+                }) { Text("Rozpocznij od nowa") }
+            },
+            dismissButton = { TextButton(onClick = { resetFlowConfirm = null }) { Text("Anuluj") } }
+        )
+    }
+}
+
+@Composable
+fun CalibrationProfileCard(
+    profile: com.poziomnica.domain.CalibrationProfile,
+    onActivate: () -> Unit,
+    onDefault: () -> Unit,
+    onRename: () -> Unit,
+    onDelete: () -> Unit
+) {
+    ElevatedCard {
+        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(if (profile.isActive) Icons.Default.CheckCircle else Icons.Default.Tune, null, tint = if (profile.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                Column(Modifier.weight(1f)) {
+                    Text(profile.name, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        when {
+                            profile.isActive -> "Używany automatycznie"
+                            profile.isDefault -> "Domyślny zestaw"
+                            else -> "Zapisany zestaw"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Text(
+                "Tylna obudowa 4x90°: pitch ${"%.2f".format(profile.offsetPitch)}°, roll ${"%.2f".format(profile.offsetRoll)}°",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                "Krawędzie 2x180°: długa ${"%.2f".format(profile.longEdgeOffset)}°, krótka ${"%.2f".format(profile.shortEdgeOffset)}°",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                "Ostatnia kalibracja: ${if (profile.lastCalibratedAt == 0L) "brak" else SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(java.util.Date(profile.lastCalibratedAt))}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (!profile.isActive) {
+                    FilledTonalButton(onClick = onActivate, modifier = Modifier.height(36.dp), contentPadding = PaddingValues(horizontal = 10.dp)) {
+                        Icon(Icons.Default.CheckCircle, null, Modifier.size(16.dp))
+                        Spacer(Modifier.width(5.dp))
+                        Text("Użyj zestawu")
+                    }
+                }
+                FilledTonalButton(onClick = onDefault, modifier = Modifier.height(36.dp), contentPadding = PaddingValues(horizontal = 10.dp)) {
+                    Icon(Icons.Default.PushPin, null, Modifier.size(16.dp))
+                    Spacer(Modifier.width(5.dp))
+                    Text(if (profile.isDefault) "Domyślny" else "Ustaw domyślny")
+                }
+                if (!profile.isDefault) {
+                    FilledTonalButton(onClick = onRename, modifier = Modifier.height(36.dp), contentPadding = PaddingValues(horizontal = 10.dp)) {
+                        Icon(Icons.Default.Edit, null, Modifier.size(16.dp))
+                        Spacer(Modifier.width(5.dp))
+                        Text("Nazwa")
+                    }
+                    FilledTonalButton(onClick = onDelete, modifier = Modifier.height(36.dp), contentPadding = PaddingValues(horizontal = 10.dp)) {
+                        Icon(Icons.Default.Delete, null, Modifier.size(16.dp))
+                        Spacer(Modifier.width(5.dp))
+                        Text("Usuń")
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1259,7 +1339,7 @@ fun faqItems(): List<FaqItem> = listOf(
     ),
     FaqItem(
         "Kalibracja",
-        "Kalibracja kompensuje etui, wystający aparat i nierówności obudowy. Dla tylnej obudowy wykonaj cztery pomiary na tej samej powierzchni, obracając telefon co 90°. Dla krawędzi wykonaj dwa pomiary na tej samej krawędzi po obrocie telefonu o 180°. Po zmianie etui warto utworzyć osobny profil kalibracji."
+        "Kalibracja kompensuje etui, wystający aparat i nierówności obudowy. Dla tylnej obudowy wykonaj cztery pomiary na tej samej powierzchni, obracając telefon co 90°. Dla krawędzi wykonaj dwa pomiary na tej samej krawędzi po obrocie telefonu o 180°. Jeden zestaw kalibracji może zawierać korektę tylnej obudowy oraz krawędzi, a aplikacja podczas pomiaru automatycznie dobiera właściwą korektę do aktualnego ułożenia telefonu. Po zmianie etui warto utworzyć osobny zestaw i nazwać go zgodnie z używaną obudową."
     ),
     FaqItem(
         "Ustawienia",
