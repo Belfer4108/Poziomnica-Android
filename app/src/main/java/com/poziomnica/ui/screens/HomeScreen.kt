@@ -3,6 +3,7 @@
 package com.poziomnica.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -65,10 +66,11 @@ fun HomeScreen(nav: NavHostController, viewModel: HomeViewModel) {
             Spacer(Modifier.height(12.dp))
             LazyVerticalGrid(columns = GridCells.Adaptive(142.dp), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(tiles) { tile ->
-                    ElevatedCard(
+                    Card(
                         onClick = { nav.navigate(tile.route) { launchSingleTop = true } },
                         modifier = Modifier.height(108.dp),
-                        colors = CardDefaults.elevatedCardColors(containerColor = tile.color.copy(alpha = if (settings.darkTheme) 0.18f else 0.12f))
+                        colors = CardDefaults.cardColors(containerColor = tile.color.copy(alpha = if (settings.darkTheme) 0.18f else 0.08f)),
+                        border = BorderStroke(0.6.dp, tile.color.copy(alpha = if (settings.darkTheme) 0.20f else 0.14f))
                     ) {
                         Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.SpaceBetween) {
                             Surface(color = tile.color.copy(alpha = if (settings.darkTheme) 0.24f else 0.18f), shape = MaterialTheme.shapes.medium) {

@@ -1158,9 +1158,16 @@ fun ProfileNameDialog(
 
 @Composable
 fun SettingsScreen(nav: NavHostController, vm: SettingsViewModel) {
+    val context = LocalContext.current
     val settings by vm.settings.collectAsStateWithLifecycle()
     var resetSection by remember { mutableStateOf<String?>(null) }
     var section by remember { mutableStateOf("Pomiar") }
+    var cameraPermissionGranted by remember {
+        mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
+    }
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        cameraPermissionGranted = it
+    }
     Scaffold(topBar = { CompactMeasurementTopBar(nav, "Ustawienia") }) { padding ->
         Column(Modifier.padding(padding).padding(16.dp).verticalScroll(androidx.compose.foundation.rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(
@@ -1240,11 +1247,32 @@ fun SettingsScreen(nav: NavHostController, vm: SettingsViewModel) {
                 }
                 else -> {
                     SettingsSection("Uprawnienia")
-                    Text("Aplikacja wymaga uprawnienia aparatu tylko w trybie Aparat. Pozostałe moduły działają bez aparatu, internetu, lokalizacji i konta użytkownika.", style = MaterialTheme.typography.bodyMedium)
-                    AssistChip(onClick = {}, label = { Text("Aparat: wymagany tylko dla trybu aparatu") }, leadingIcon = { Icon(Icons.Default.PhotoCamera, null) })
-                    AssistChip(onClick = {}, label = { Text("Lokalizacja: niewymagana") }, leadingIcon = { Icon(Icons.Default.LocationOff, null) })
-                    AssistChip(onClick = {}, label = { Text("Internet: niewymagany") }, leadingIcon = { Icon(Icons.Default.CloudOff, null) })
-                    OutlinedButton(onClick = { resetSection = "Wszystko" }, modifier = Modifier.fillMaxWidth()) { Text("Reset wszystkich ustawień") }
+                    Text("Aplikacja prosi tylko o dostęp do aparatu i tylko wtedy, gdy chcesz używać trybu Aparat. Pozostałe moduły działają bez tego uprawnienia.", style = MaterialTheme.typography.bodyMedium)
+                    ElevatedCard(colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Icon(Icons.Default.PhotoCamera, null, tint = MaterialTheme.colorScheme.primary)
+                                Column(Modifier.weight(1f)) {
+                                    Text("Aparat", style = MaterialTheme.typography.titleMedium)
+                                    Text(
+                                        if (cameraPermissionGranted) "Uprawnienie udzielone. Tryb aparatu może robić zdjęcia i pokazywać podgląd." else "Wymagany tylko do podglądu i zdjęć w trybie Aparat.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Icon(if (cameraPermissionGranted) Icons.Default.CheckCircle else Icons.Default.ErrorOutline, null, tint = if (cameraPermissionGranted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
+                            }
+                            Button(
+                                onClick = {
+                                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                                },
+                                enabled = !cameraPermissionGranted,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(if (cameraPermissionGranted) "Aparat jest zatwierdzony" else "Poproś Androida o dostęp do aparatu")
+                            }
+                        }
+                    }
                 }
             }
         }

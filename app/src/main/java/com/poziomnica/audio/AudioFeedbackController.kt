@@ -2,9 +2,7 @@ package com.poziomnica.audio
 
 import android.media.AudioAttributes
 import android.media.AudioFormat
-import android.media.AudioManager
 import android.media.AudioTrack
-import android.media.ToneGenerator
 import com.poziomnica.domain.SoundMode
 import com.poziomnica.settings.UserSettings
 import kotlinx.coroutines.CoroutineScope
@@ -16,8 +14,9 @@ import kotlin.math.abs
 import kotlin.math.sin
 
 class AudioFeedbackController {
-    private var toneGenerator: ToneGenerator? = null
     private var continuousTrack: AudioTrack? = null
+    private var continuousToneHz: Int? = null
+    private var continuousVolume: Float? = null
     private var proximityJob: Job? = null
     private var wasInTolerance = false
 
@@ -40,19 +39,15 @@ class AudioFeedbackController {
         proximityJob?.cancel()
         proximityJob = null
         stopContinuous()
-        toneGenerator?.release()
-        toneGenerator = null
         wasInTolerance = false
     }
 
     fun test(settings: UserSettings) {
-        beep(settings)
+        playTone(settings, durationMs = 650)
     }
 
     private fun beep(settings: UserSettings) {
-        val volume = (settings.volume * 100).toInt().coerceIn(0, 100)
-        val generator = toneGenerator ?: ToneGenerator(AudioManager.STREAM_MUSIC, volume).also { toneGenerator = it }
-        generator.startTone(ToneGenerator.TONE_PROP_BEEP, 90)
+        playTone(settings, durationMs = 120)
     }
 
     private fun startProximity(distance: Float, inTolerance: Boolean, settings: UserSettings, scope: CoroutineScope) {
@@ -73,29 +68,54 @@ class AudioFeedbackController {
     }
 
     private fun startTone(settings: UserSettings) {
-        if (continuousTrack != null) return
-        val sampleRate = 8000
-        val samples = sampleRate / 2
-        val data = ShortArray(samples)
-        for (i in data.indices) {
-            val angle = 2.0 * PI * i * settings.toneHz / sampleRate
-            data[i] = (sin(angle) * Short.MAX_VALUE * settings.volume * 0.25f).toInt().toShort()
+        val volume = settings.volume.coerceIn(0f, 1f)
+        if (continuousTrack != null && continuousToneHz == settings.toneHz && continuousVolume == volume) return
+        stopContinuous()
+        continuousTrack = buildToneTrack(settings, durationMs = 500).also { track ->
+            track.setLoopPoints(0, track.bufferSizeInFrames, -1)
+            track.play()
         }
-        val track = AudioTrack.Builder()
-            .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
-            .setAudioFormat(AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(sampleRate).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
-            .setBufferSizeInBytes(data.size * 2)
-            .setTransferMode(AudioTrack.MODE_STATIC)
-            .build()
-        track.write(data, 0, data.size)
-        track.setLoopPoints(0, data.size, -1)
-        track.play()
-        continuousTrack = track
+        continuousToneHz = settings.toneHz
+        continuousVolume = volume
     }
 
     private fun stopContinuous() {
         continuousTrack?.stop()
         continuousTrack?.release()
         continuousTrack = null
+        continuousToneHz = null
+        continuousVolume = null
+    }
+
+    private fun playTone(settings: UserSettings, durationMs: Int) {
+        if (!settings.soundEnabled) return
+        val track = buildToneTrack(settings, durationMs)
+        track.setNotificationMarkerPosition(track.bufferSizeInFrames)
+        track.setPlaybackPositionUpdateListener(object : AudioTrack.OnPlaybackPositionUpdateListener {
+            override fun onMarkerReached(audioTrack: AudioTrack) {
+                audioTrack.release()
+            }
+
+            override fun onPeriodicNotification(audioTrack: AudioTrack) = Unit
+        })
+        track.play()
+    }
+
+    private fun buildToneTrack(settings: UserSettings, durationMs: Int): AudioTrack {
+        val sampleRate = 44100
+        val samples = (sampleRate * durationMs / 1000f).toInt().coerceAtLeast(1)
+        val data = ShortArray(samples)
+        val amplitude = Short.MAX_VALUE * settings.volume.coerceIn(0f, 1f) * 0.45f
+        for (i in data.indices) {
+            val angle = 2.0 * PI * i * settings.toneHz.coerceIn(220, 2200) / sampleRate
+            data[i] = (sin(angle) * amplitude).toInt().toShort()
+        }
+        return AudioTrack.Builder()
+            .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
+            .setAudioFormat(AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(sampleRate).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
+            .setBufferSizeInBytes(data.size * 2)
+            .setTransferMode(AudioTrack.MODE_STATIC)
+            .build()
+            .also { it.write(data, 0, data.size) }
     }
 }
