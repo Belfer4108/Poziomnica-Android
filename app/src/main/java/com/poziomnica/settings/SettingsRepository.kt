@@ -45,7 +45,7 @@ class SettingsRepository(private val context: Context) {
             indicatorStyle = enumValueOrDefault(p[Keys.style], IndicatorStyle.REALISTIC),
             smoothingLevel = enumValueOrDefault(p[Keys.smoothing], SmoothingLevel.STANDARD),
             defaultTolerance = p[Keys.tolerance] ?: 0.2f,
-            defaultUnit = enumValueOrDefault(p[Keys.unit], AngleUnit.DEGREES).takeUnless { it == AngleUnit.RATIO || it == AngleUnit.LUX } ?: AngleUnit.DEGREES,
+            defaultUnit = enumValueOrDefault(p[Keys.unit], AngleUnit.DEGREES).takeUnless { it == AngleUnit.RATIO || it == AngleUnit.LUX || it == AngleUnit.METERS || it == AngleUnit.CENTIMETERS || it == AngleUnit.SQUARE_METERS || it == AngleUnit.CUBIC_METERS } ?: AngleUnit.DEGREES,
             soundEnabled = p[Keys.sound] ?: true,
             vibrationEnabled = p[Keys.vibration] ?: true,
             soundMode = enumValueOrDefault(p[Keys.soundMode], SoundMode.SINGLE),
@@ -65,7 +65,7 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setTolerance(value: Float) = edit { it[Keys.tolerance] = value.coerceIn(0.05f, 5f) }
     suspend fun setDarkTheme(value: Boolean) = edit { it[Keys.darkTheme] = value }
-    suspend fun setUnit(value: AngleUnit) = edit { it[Keys.unit] = (value.takeUnless { it == AngleUnit.RATIO || it == AngleUnit.LUX } ?: AngleUnit.DEGREES).name }
+    suspend fun setUnit(value: AngleUnit) = edit { it[Keys.unit] = (value.takeUnless { it == AngleUnit.RATIO || it == AngleUnit.LUX || it == AngleUnit.METERS || it == AngleUnit.CENTIMETERS || it == AngleUnit.SQUARE_METERS || it == AngleUnit.CUBIC_METERS } ?: AngleUnit.DEGREES).name }
     suspend fun setSmoothing(value: SmoothingLevel) = edit { it[Keys.smoothing] = value.name }
     suspend fun setSound(value: Boolean) = edit { it[Keys.sound] = value }
     suspend fun setSoundMode(value: SoundMode) = edit { it[Keys.soundMode] = value.name }

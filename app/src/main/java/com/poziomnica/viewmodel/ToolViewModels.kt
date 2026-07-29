@@ -24,14 +24,32 @@ class LightMeterViewModel(private val container: AppContainer) : ViewModel() {
     private val internal = MutableStateFlow(LightUiState())
     val uiState: StateFlow<LightUiState> = internal
     private var job: Job? = null
+    private var minLux = Float.MAX_VALUE
+    private var maxLux = 0f
+    private var sumLux = 0f
+    private var count = 0
 
     fun start() {
+        if (job?.isActive == true) return
         job?.cancel()
         job = viewModelScope.launch {
             container.toolSensorManager.lightReadings().collect { reading ->
+                val stableReading = if (reading.available) {
+                    minLux = minOf(minLux, reading.lux)
+                    maxLux = maxOf(maxLux, reading.lux)
+                    count += 1
+                    sumLux += reading.lux
+                    reading.copy(
+                        minLux = if (minLux == Float.MAX_VALUE) reading.lux else minLux,
+                        maxLux = maxLux,
+                        averageLux = if (count > 0) sumLux / count else reading.lux
+                    )
+                } else {
+                    reading
+                }
                 internal.value = internal.value.copy(
-                    reading = reading,
-                    message = if (!reading.available) "Ten telefon nie udostępnia czujnika światła." else lightDescription(reading.lux)
+                    reading = stableReading,
+                    message = if (!stableReading.available) "Ten telefon nie udostępnia czujnika światła." else lightDescription(stableReading.lux)
                 )
             }
         }
@@ -47,6 +65,10 @@ class LightMeterViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun resetStats() {
+        minLux = Float.MAX_VALUE
+        maxLux = 0f
+        sumLux = 0f
+        count = 0
         internal.value = internal.value.copy(heldReading = null, isHeld = false, savedMessage = null)
         start()
     }

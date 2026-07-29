@@ -515,13 +515,17 @@ fun drawCameraOverlayOnImage(context: android.content.Context, uri: Uri, state: 
     canvas.drawText("Poziomnica", pad, paint.textSize * 1.15f, paint)
     paint.isFakeBoldText = false
     canvas.drawText("Przechył ${"%.2f".format(state.reading.roll)}°   Poziom ${"%.2f".format(state.reading.pitch)}°", pad, paint.textSize * 2.35f, paint)
-    paint.color = Color.argb(230, 24, 160, 88)
+    val horizontalOk = kotlin.math.abs(state.reading.pitch) <= state.settings.defaultTolerance
+    val verticalOk = kotlin.math.abs(state.reading.roll) <= state.settings.defaultTolerance
     paint.strokeWidth = (mutable.width * 0.006f).coerceAtLeast(5f)
     val centerX = mutable.width / 2f
     val centerY = mutable.height / 2f
+    paint.color = if (horizontalOk) Color.argb(230, 24, 160, 88) else Color.argb(230, 229, 57, 53)
     canvas.drawLine(pad, centerY, mutable.width - pad, centerY, paint)
+    paint.color = if (verticalOk) Color.argb(230, 24, 160, 88) else Color.argb(230, 229, 57, 53)
     canvas.drawLine(centerX, boxHeight + pad, centerX, mutable.height - pad, paint)
     paint.style = Paint.Style.STROKE
+    paint.color = if (horizontalOk && verticalOk) Color.argb(230, 24, 160, 88) else Color.WHITE
     canvas.drawCircle(centerX, centerY, mutable.width.coerceAtMost(mutable.height) * 0.035f, paint)
     paint.style = Paint.Style.FILL
     if (uri.scheme == "file" && uri.path != null) {
@@ -937,7 +941,7 @@ fun formatMeasurementValue(measurement: MeasurementEntity): String {
     val unit = runCatching { AngleUnit.valueOf(measurement.unit) }.getOrNull()
     return when (unit) {
         AngleUnit.LUX -> "%.1f lx".format(measurement.mainValue)
-        AngleUnit.DEGREES, AngleUnit.PERCENT, AngleUnit.MM_PER_M, AngleUnit.CM_PER_M, AngleUnit.RATIO -> MeasurementMath.formatByUnit(measurement.mainValue, unit)
+        AngleUnit.DEGREES, AngleUnit.PERCENT, AngleUnit.MM_PER_M, AngleUnit.CM_PER_M, AngleUnit.RATIO, AngleUnit.METERS, AngleUnit.CENTIMETERS, AngleUnit.SQUARE_METERS, AngleUnit.CUBIC_METERS -> MeasurementMath.formatByUnit(measurement.mainValue, unit)
         null -> "%.3f %s".format(measurement.mainValue, measurement.unit)
     }
 }
@@ -1351,11 +1355,19 @@ fun faqItems(): List<FaqItem> = listOf(
     ),
     FaqItem(
         "Aparat",
-        "Tryb aparatu pokazuje linie poziomu, pionu, siatkę i cyfrowe wartości orientacji telefonu. Zdjęcie bez nakładki zapisuje sam obraz, a zdjęcie z nakładką zapisuje obraz z liniami pomocniczymi i wynikiem. Przycisk Ekspozycja blokuje automatyczną jasność i ostrość na środku kadru, żeby obraz nie zmieniał jasności podczas mierzenia. Wyłączenie przywraca automatykę aparatu. Dotknięcie dwóch punktów na obrazie pozwala pomocniczo ocenić linię widoczną w kadrze. Taki pomiar może być zniekształcony przez perspektywę, jeżeli telefon nie jest równolegle do obiektu."
+        "Tryb aparatu pokazuje linie poziomu, pionu, siatkę i cyfrowe wartości orientacji telefonu. Linia pozioma jest zielona tylko wtedy, gdy telefon mieści się w tolerancji poziomu; linia pionowa jest zielona tylko wtedy, gdy mieści się w tolerancji pionu. Poza tolerancją linie są czerwone. Zdjęcie bez nakładki zapisuje sam obraz, a zdjęcie z nakładką zapisuje obraz z liniami pomocniczymi i wynikiem. Przycisk Ekspozycja blokuje automatyczną jasność i ostrość na środku kadru, żeby obraz nie zmieniał jasności podczas mierzenia. Wyłączenie przywraca automatykę aparatu. Dotknięcie dwóch punktów na obrazie pozwala pomocniczo ocenić linię widoczną w kadrze. Taki pomiar może być zniekształcony przez perspektywę, jeżeli telefon nie jest równolegle do obiektu."
+    ),
+    FaqItem(
+        "Miarka AR",
+        "Miarka AR korzysta z ARCore, więc działa tylko na telefonach obsługujących Usługi Google Play dla AR. Ustaw celownik na pierwszym punkcie i naciśnij Start. Przesuwaj telefon do drugiego punktu: żółta taśma będzie rozwijała się albo chowała razem z ruchem celownika. Naciśnij Koniec, aby zatwierdzić wynik. Wynik zależy od modelu telefonu, kamery, światła, tekstury powierzchni i stabilności ręki, dlatego nie należy traktować go jak pomiaru laserowego. Zdjęcie zapisuje obraz z naniesioną taśmą i wynikiem w folderze Poziomnica w Galerii."
     ),
     FaqItem(
         "Historia",
         "Historia przechowuje lokalne pomiary bez konta i bez internetu. Pomiar można podejrzeć, udostępnić, wyeksportować albo usunąć. Przy wielu zaznaczonych pomiarach eksport obejmuje tylko zaznaczenie."
+    ),
+    FaqItem(
+        "Przeliczniki",
+        "Przeliczniki służą do szybkiego przeliczania spadku, długości oraz jednostek kąta i nachylenia bez uruchamiania pomiaru. Przy spadku możesz podać wartość w stopniach, procentach, mm/m albo cm/m oraz długość całego odcinka, a aplikacja pokaże wymaganą różnicę wysokości."
     ),
     FaqItem(
         "Kalibracja",
@@ -1363,7 +1375,7 @@ fun faqItems(): List<FaqItem> = listOf(
     ),
     FaqItem(
         "Ustawienia",
-        "Wygląd zmienia motyw i styl wskaźników. Pomiar ustawia tolerancję, jednostkę, wygładzanie i automatyczny HOLD. Dźwięk i wibracje ustawiają sposób sygnalizacji celu. Aparat ustawia domyślne linie, siatkę, grubość i przezroczystość nakładki."
+        "Wygląd zmienia motyw i styl wskaźników. Pomiar ustawia tolerancję, jednostkę, wygładzanie i automatyczny HOLD. Dźwięk i wibracje ustawiają sposób sygnalizacji celu. Aparat ustawia domyślne linie, siatkę, grubość i przezroczystość nakładki. Uprawnienia służą tylko do poproszenia Androida o dostęp do aparatu; lokalizacja i internet nie są wymagane. Każdą sekcję można przywrócić do wartości domyślnych osobno."
     ),
     FaqItem(
         "Luksomierz",

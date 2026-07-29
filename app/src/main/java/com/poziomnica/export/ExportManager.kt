@@ -105,7 +105,7 @@ class ExportManager(private val context: Context) {
         val unit = runCatching { AngleUnit.valueOf(m.unit) }.getOrNull()
         return when (unit) {
             AngleUnit.LUX -> "%.1f lx".format(m.mainValue)
-            AngleUnit.DEGREES, AngleUnit.PERCENT, AngleUnit.MM_PER_M, AngleUnit.CM_PER_M, AngleUnit.RATIO -> MeasurementMath.formatByUnit(m.mainValue, unit)
+            AngleUnit.DEGREES, AngleUnit.PERCENT, AngleUnit.MM_PER_M, AngleUnit.CM_PER_M, AngleUnit.RATIO, AngleUnit.METERS, AngleUnit.CENTIMETERS, AngleUnit.SQUARE_METERS, AngleUnit.CUBIC_METERS -> MeasurementMath.formatByUnit(m.mainValue, unit)
             null -> "%.3f %s".format(m.mainValue, m.unit)
         }
     }

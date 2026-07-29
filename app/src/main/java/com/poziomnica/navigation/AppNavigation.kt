@@ -18,6 +18,7 @@ import com.poziomnica.ui.screens.ProtractorScreen
 import com.poziomnica.ui.screens.SettingsScreen
 import com.poziomnica.ui.screens.SlopeScreen
 import com.poziomnica.ui.screens.SurfaceLevelScreen
+import com.poziomnica.ui.screens.TapeMeasureScreen
 import com.poziomnica.viewmodel.*
 
 object Routes {
@@ -34,6 +35,7 @@ object Routes {
     const val LIGHT = "light"
     const val FAQ = "faq"
     const val CALCULATORS = "calculators"
+    const val TAPE_MEASURE = "tape_measure"
 }
 
 @Composable
@@ -52,5 +54,6 @@ fun AppNavigation(nav: NavHostController, factory: ViewModelFactory) {
         composable(Routes.LIGHT) { LightMeterScreen(nav, viewModel(factory = factory)) }
         composable(Routes.FAQ) { FaqScreen(nav) }
         composable(Routes.CALCULATORS) { CalculatorsScreen(nav) }
+        composable(Routes.TAPE_MEASURE) { TapeMeasureScreen(nav, viewModel(factory = factory)) }
     }
 }

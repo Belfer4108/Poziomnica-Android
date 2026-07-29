@@ -33,35 +33,76 @@ fun LinearLevelScreen(nav: NavHostController, vm: LinearLevelViewModel) {
     var targetInput by remember { mutableStateOf("0") }
     DisposableEffect(Unit) { vm.start(); onDispose { vm.stop() } }
     val reading = state.heldReading ?: state.reading
-    MeasurementScaffold(nav, "Poziomnica", compact = true) {
-        BigValue(MeasurementMath.formatByUnit(reading.linearAngle, state.settings.defaultUnit), state.targetReached, compact = true)
-        LinearVial(reading.linearAngle - state.target, state.settings.defaultTolerance, state.settings.indicatorStyle, modifier = Modifier.heightIn(max = 92.dp))
-        Text("Pomiar: ${reading.supportEdge}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(
-            "Cel: ${MeasurementMath.formatByUnit(state.target, state.settings.defaultUnit)}   Różnica: ${MeasurementMath.formatByUnit(reading.linearAngle - state.target, state.settings.defaultUnit)}",
-            style = MaterialTheme.typography.bodyMedium
-        )
-        MeasurementInfo(state, compact = true)
-        Controls(vm, compact = true)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = targetInput,
-                onValueChange = { targetInput = it },
-                label = { Text("Cel (${state.settings.defaultUnit.label})") },
-                suffix = { Text(unitSuffix(state.settings.defaultUnit)) },
-                singleLine = true,
-                modifier = Modifier.weight(1f)
-            )
-            Button(
-                onClick = {
-                    targetInput.replace(',', '.').toFloatOrNull()?.let {
-                        vm.setTarget(it, state.settings.defaultUnit)
-                        vm.setSound(true)
-                        vm.setSoundMode(SoundMode.CONTINUOUS)
+    val difference = reading.linearAngle - state.target
+    Scaffold(topBar = { CompactMeasurementTopBar(nav, "Poziomnica") }) { padding ->
+        BoxWithConstraints(Modifier.padding(padding).fillMaxSize()) {
+            val portrait = maxHeight >= maxWidth
+            val bottomPanelMaxHeight = maxHeight * if (portrait) 0.38f else 0.46f
+            val outer = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 6.dp, vertical = 4.dp)
+                .navigationBarsPadding()
+            Column(
+                outer.then(if (portrait) Modifier else Modifier.verticalScroll(rememberScrollState())),
+                verticalArrangement = if (portrait) Arrangement.SpaceBetween else Arrangement.spacedBy(6.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    BigValue(MeasurementMath.formatByUnit(reading.linearAngle, state.settings.defaultUnit), state.targetReached, compact = true)
+                    Text(
+                        "Pomiar: ${reading.supportEdge}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        "Cel: ${MeasurementMath.formatByUnit(state.target, state.settings.defaultUnit)}   Różnica: ${MeasurementMath.formatByUnit(difference, state.settings.defaultUnit)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .then(if (portrait) Modifier.weight(1f) else Modifier)
+                        .padding(vertical = if (portrait) 8.dp else 0.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LinearVial(difference, state.settings.defaultTolerance, state.settings.indicatorStyle, modifier = Modifier.heightIn(max = 92.dp))
+                }
+                Column(
+                    Modifier.then(if (portrait) Modifier.heightIn(max = bottomPanelMaxHeight).verticalScroll(rememberScrollState()) else Modifier),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    MeasurementInfo(state, compact = true)
+                    Controls(vm, compact = true)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = targetInput,
+                            onValueChange = { targetInput = it },
+                            label = { Text("Cel (${state.settings.defaultUnit.label})") },
+                            suffix = { Text(unitSuffix(state.settings.defaultUnit)) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Button(
+                            onClick = {
+                                targetInput.replace(',', '.').toFloatOrNull()?.let {
+                                    vm.setTarget(it, state.settings.defaultUnit)
+                                    vm.setSound(true)
+                                    vm.setSoundMode(SoundMode.CONTINUOUS)
+                                }
+                            },
+                            modifier = Modifier.height(44.dp)
+                        ) { Text("Ustaw") }
                     }
-                },
-                modifier = Modifier.height(48.dp)
-            ) { Text("Ustaw") }
+                }
+            }
         }
     }
 }
@@ -71,20 +112,62 @@ fun SurfaceLevelScreen(nav: NavHostController, vm: SurfaceLevelViewModel) {
     val state by vm.uiState.collectAsStateWithLifecycle()
     DisposableEffect(Unit) { vm.start(); onDispose { vm.stop() } }
     val r = state.heldReading ?: state.reading
-    MeasurementScaffold(nav, "Powierzchnia", compact = true) {
-        SurfaceBullseye(r.surfaceX, r.surfaceY, state.settings.defaultTolerance, Modifier.align(Alignment.CenterHorizontally))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MetricTile("X", "%+.2f°".format(r.surfaceX), Modifier.weight(1f))
-            MetricTile("Y", "%+.2f°".format(r.surfaceY), Modifier.weight(1f))
-            MetricTile("Odchylenie", "%.2f°".format(r.totalSurfaceDeviation), Modifier.weight(1f))
+    Scaffold(topBar = { CompactMeasurementTopBar(nav, "Powierzchnia") }) { padding ->
+        BoxWithConstraints(Modifier.padding(padding).fillMaxSize()) {
+            val portrait = maxHeight >= maxWidth
+            val outer = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 6.dp, vertical = 4.dp)
+                .navigationBarsPadding()
+            if (portrait) {
+                Column(outer, verticalArrangement = Arrangement.SpaceBetween) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            MetricTile("X", "%+.2f°".format(r.surfaceX), Modifier.weight(1f))
+                            MetricTile("Y", "%+.2f°".format(r.surfaceY), Modifier.weight(1f))
+                            MetricTile("Odchylenie", "%.2f°".format(r.totalSurfaceDeviation), Modifier.weight(1f))
+                        }
+                        Text("Tolerancja ±${state.settings.defaultTolerance}°", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        SurfaceBullseye(r.surfaceX, r.surfaceY, state.settings.defaultTolerance)
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        AssistChip(
+                            onClick = {},
+                            label = { Text(if (state.targetReached) "Poziom osiągnięty" else "Przesuń bąbelek do środka") },
+                            leadingIcon = { Icon(if (state.targetReached) Icons.Default.CheckCircle else Icons.Default.Adjust, null) }
+                        )
+                        SurfaceControls(vm)
+                    }
+                }
+            } else {
+                Column(
+                    outer.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    SurfaceBullseye(r.surfaceX, r.surfaceY, state.settings.defaultTolerance, Modifier.align(Alignment.CenterHorizontally))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        MetricTile("X", "%+.2f°".format(r.surfaceX), Modifier.weight(1f))
+                        MetricTile("Y", "%+.2f°".format(r.surfaceY), Modifier.weight(1f))
+                        MetricTile("Odchylenie", "%.2f°".format(r.totalSurfaceDeviation), Modifier.weight(1f))
+                    }
+                    Text("Tolerancja ±${state.settings.defaultTolerance}°", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    AssistChip(
+                        onClick = {},
+                        label = { Text(if (state.targetReached) "Poziom osiągnięty" else "Reguluj nogi lub podkładki tak, aby bąbelek wszedł w centralny okrąg") },
+                        leadingIcon = { Icon(if (state.targetReached) Icons.Default.CheckCircle else Icons.Default.Adjust, null) }
+                    )
+                    SurfaceControls(vm)
+                }
+            }
         }
-        Text("Tolerancja ±${state.settings.defaultTolerance}°", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        AssistChip(
-            onClick = {},
-            label = { Text(if (state.targetReached) "Poziom osiągnięty" else "Reguluj nogi lub podkładki tak, aby bąbelek wszedł w centralny okrąg") },
-            leadingIcon = { Icon(if (state.targetReached) Icons.Default.CheckCircle else Icons.Default.Adjust, null) }
-        )
-        SurfaceControls(vm)
     }
 }
 
@@ -94,15 +177,134 @@ fun PlumbScreen(nav: NavHostController, vm: PlumbViewModel) {
     DisposableEffect(Unit) { vm.start(); onDispose { vm.stop() } }
     val reading = state.heldReading ?: state.reading
     val deviation = 90f - kotlin.math.abs(reading.roll)
-    MeasurementScaffold(nav, "Pion", compact = true) {
-        BigValue("%+.2f°".format(deviation), state.targetReached, compact = true)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MetricTile("Krawędź", reading.supportEdge, Modifier.weight(1.35f))
-            MetricTile("Tolerancja", "±${state.settings.defaultTolerance}°", Modifier.weight(0.8f))
+    Scaffold(
+        topBar = { CompactMeasurementTopBar(nav, "Pion") }
+    ) { padding ->
+        BoxWithConstraints(
+            Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
+            val landscape = maxWidth > maxHeight
+            val tight = maxHeight < 560.dp
+            val vialWidth = when {
+                landscape -> 76.dp
+                tight -> 96.dp
+                else -> 126.dp
+            }
+            val landscapeVialHeight = (maxHeight - 136.dp).coerceAtLeast(112.dp)
+            if (landscape) {
+                Row(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                        .navigationBarsPadding(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "%+.2f°".format(deviation),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (state.targetReached) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1
+                            )
+                            Text(
+                                reading.supportEdge,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .padding(vertical = 2.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            LinearVial(
+                                deviation,
+                                state.settings.defaultTolerance,
+                                state.settings.indicatorStyle,
+                                vertical = true,
+                                modifier = Modifier
+                                    .width(vialWidth)
+                                    .heightIn(max = landscapeVialHeight)
+                            )
+                        }
+                        Text(
+                            state.status,
+                            color = if (state.targetReached) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelSmall,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    PlumbSideControls(vm, Modifier.width(118.dp).fillMaxHeight())
+                }
+            } else {
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                        .navigationBarsPadding(),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        BigValue("%+.2f°".format(deviation), state.targetReached, compact = true)
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            MetricTile("Krawędź", reading.supportEdge, Modifier.weight(1.35f))
+                            MetricTile("Tolerancja", "±${state.settings.defaultTolerance}°", Modifier.weight(0.8f))
+                        }
+                    }
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(top = if (tight) 8.dp else 18.dp, bottom = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            LinearVial(
+                                deviation,
+                                state.settings.defaultTolerance,
+                                state.settings.indicatorStyle,
+                                vertical = true,
+                                modifier = Modifier.width(vialWidth)
+                            )
+                            Text(
+                                state.status,
+                                color = if (state.targetReached) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.titleSmall,
+                                textAlign = TextAlign.Center,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    PlumbControls(vm)
+                }
+            }
         }
-        LinearVial(deviation, state.settings.defaultTolerance, state.settings.indicatorStyle, vertical = true, modifier = Modifier.align(Alignment.CenterHorizontally).width(154.dp).heightIn(max = 260.dp))
-        Text(state.status, color = if (state.targetReached) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.titleSmall)
-        PlumbControls(vm)
     }
 }
 
@@ -119,53 +321,85 @@ fun SlopeScreen(nav: NavHostController, vm: SlopeViewModel) {
     val reading = state.heldReading ?: state.reading
     val difference = reading.linearAngle - state.target
     val lengthMeters = lengthInput.replace(',', '.').toFloatOrNull()?.coerceIn(0f, 500f) ?: lengthSlider
-    MeasurementScaffold(nav, "Spadek", compact = true) {
-        BigValue(MeasurementMath.formatByUnit(reading.linearAngle, unit), state.targetReached, compact = true)
-        Text(
-            "Cel ${MeasurementMath.formatByUnit(state.target, unit)}   Różnica ${MeasurementMath.formatByUnit(difference, unit)}",
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Text(
-            state.status,
-            style = MaterialTheme.typography.titleSmall,
-            color = if (state.targetReached) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-        )
-        LinearVial(difference, state.settings.defaultTolerance, state.settings.indicatorStyle, modifier = Modifier.heightIn(max = 92.dp))
-        SlopeControls(vm, unit)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                custom,
-                { custom = it },
-                label = { Text("Cel (${unit.label})") },
-                suffix = { Text(unitSuffix(unit)) },
-                singleLine = true,
-                modifier = Modifier.weight(1f)
-            )
-            Button(
-                onClick = { custom.replace(',', '.').toFloatOrNull()?.let { vm.setTarget(it, unit) } },
-                modifier = Modifier.height(48.dp)
-            ) { Text("Ustaw") }
+    Scaffold(topBar = { CompactMeasurementTopBar(nav, "Spadek") }) { padding ->
+        BoxWithConstraints(Modifier.padding(padding).fillMaxSize()) {
+            val portrait = maxHeight >= maxWidth
+            val bottomPanelMaxHeight = maxHeight * if (portrait) 0.58f else 0.48f
+            val outer = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 6.dp, vertical = 4.dp)
+                .navigationBarsPadding()
+            Column(
+                outer.then(if (portrait) Modifier else Modifier.verticalScroll(rememberScrollState())),
+                verticalArrangement = if (portrait) Arrangement.SpaceBetween else Arrangement.spacedBy(6.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    BigValue(MeasurementMath.formatByUnit(reading.linearAngle, unit), state.targetReached, compact = true)
+                    Text(
+                        "Cel ${MeasurementMath.formatByUnit(state.target, unit)}   Różnica ${MeasurementMath.formatByUnit(difference, unit)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        state.status,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = if (state.targetReached) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                }
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .then(if (portrait) Modifier.weight(1f) else Modifier)
+                        .padding(top = if (portrait) 6.dp else 0.dp, bottom = if (portrait) 4.dp else 0.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LinearVial(difference, state.settings.defaultTolerance, state.settings.indicatorStyle, modifier = Modifier.heightIn(max = 92.dp))
+                }
+                Column(
+                    Modifier.then(if (portrait) Modifier.heightIn(max = bottomPanelMaxHeight).verticalScroll(rememberScrollState()) else Modifier),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    SlopeControls(vm, unit)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            custom,
+                            { custom = it },
+                            label = { Text("Cel (${unit.label})") },
+                            suffix = { Text(unitSuffix(unit)) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Button(
+                            onClick = { custom.replace(',', '.').toFloatOrNull()?.let { vm.setTarget(it, unit) } },
+                            modifier = Modifier.height(44.dp)
+                        ) { Text("Ustaw") }
+                    }
+                    SlopeUnitChips(unit) { unit = it }
+                    SlopePresetChips(unit, vm)
+                    DirectionControls(direction, vm)
+                    SlopeLengthPanel(
+                        enabled = useLength,
+                        onEnabledChange = { useLength = it },
+                        lengthInput = lengthInput,
+                        onLengthInput = {
+                            lengthInput = it
+                            it.replace(',', '.').toFloatOrNull()?.let { parsed -> lengthSlider = parsed.coerceIn(0.1f, 20f) }
+                        },
+                        lengthSlider = lengthSlider,
+                        onLengthSlider = {
+                            lengthSlider = it
+                            lengthInput = "%.2f".format(it)
+                        },
+                        targetDegrees = state.target,
+                        currentDegrees = reading.linearAngle,
+                        direction = direction
+                    )
+                }
+            }
         }
-        SlopeUnitChips(unit) { unit = it }
-        SlopePresetChips(unit, vm)
-        DirectionControls(direction, vm)
-        SlopeLengthPanel(
-            enabled = useLength,
-            onEnabledChange = { useLength = it },
-            lengthInput = lengthInput,
-            onLengthInput = {
-                lengthInput = it
-                it.replace(',', '.').toFloatOrNull()?.let { parsed -> lengthSlider = parsed.coerceIn(0.1f, 20f) }
-            },
-            lengthSlider = lengthSlider,
-            onLengthSlider = {
-                lengthSlider = it
-                lengthInput = "%.2f".format(it)
-            },
-            targetDegrees = state.target,
-            currentDegrees = reading.linearAngle,
-            direction = direction
-        )
     }
 }
 
@@ -180,30 +414,56 @@ fun ProtractorScreen(nav: NavHostController, vm: ProtractorViewModel) {
     val signedLiveAngle = base?.let { normalizeProtractorDelta(reading.linearAngle - it) } ?: reading.linearAngle
     val displayedAngle = captured ?: base?.let { MeasurementMath.angleBetweenSurfaces(it, reading.linearAngle) } ?: reading.linearAngle
     val vialAngle = captured ?: signedLiveAngle
-    MeasurementScaffold(nav, "Kątomierz", compact = true) {
-        BigValue("%+.2f°".format(displayedAngle), state.targetReached, compact = true)
-        LinearVial(vialAngle, state.settings.defaultTolerance, state.settings.indicatorStyle, modifier = Modifier.heightIn(max = 92.dp), scaleDegrees = 90f)
-        Text(
-            when {
-                base == null -> "Najpierw ustaw telefon na powierzchni bazowej i naciśnij Baza."
-                captured == null -> "Baza: ${"%+.2f".format(base)}°. Przechyl telefon i naciśnij Nachylenie."
-                else -> "Wynik złapany: ${"%+.2f".format(captured)}°. Reset rozpoczyna kolejny pomiar."
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        ProtractorControls(vm)
-        Text("Cel: ${"%+.2f".format(state.target)}°   Tolerancja: ±${state.settings.defaultTolerance}°", style = MaterialTheme.typography.bodySmall)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = targetInput,
-                onValueChange = { targetInput = it },
-                label = { Text("Cel") },
-                suffix = { Text("°") },
-                singleLine = true,
-                modifier = Modifier.weight(1f)
-            )
-            Button(onClick = { targetInput.replace(',', '.').toFloatOrNull()?.let(vm::setTarget) }, modifier = Modifier.height(48.dp)) { Text("Ustaw") }
+    Scaffold(topBar = { CompactMeasurementTopBar(nav, "Kątomierz") }) { padding ->
+        BoxWithConstraints(Modifier.padding(padding).fillMaxSize()) {
+            val portrait = maxHeight >= maxWidth
+            val bottomPanelMaxHeight = maxHeight * 0.48f
+            val outer = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 6.dp, vertical = 4.dp)
+                .navigationBarsPadding()
+            Column(
+                outer.then(if (portrait) Modifier else Modifier.verticalScroll(rememberScrollState())),
+                verticalArrangement = if (portrait) Arrangement.SpaceBetween else Arrangement.spacedBy(6.dp)
+            ) {
+                BigValue("%+.2f°".format(displayedAngle), state.targetReached, compact = true)
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .then(if (portrait) Modifier.weight(1f) else Modifier)
+                        .padding(vertical = if (portrait) 8.dp else 0.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LinearVial(vialAngle, state.settings.defaultTolerance, state.settings.indicatorStyle, modifier = Modifier.heightIn(max = 92.dp), scaleDegrees = 90f)
+                }
+                Column(
+                    Modifier.then(if (portrait) Modifier.heightIn(max = bottomPanelMaxHeight).verticalScroll(rememberScrollState()) else Modifier),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        when {
+                            base == null -> "Ustaw bazę, potem przechyl telefon i naciśnij Nachylenie."
+                            captured == null -> "Baza: ${"%+.2f".format(base)}°. Naciśnij Nachylenie przy drugim ustawieniu."
+                            else -> "Wynik: ${"%+.2f".format(captured)}°. Reset rozpoczyna kolejny pomiar."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    ProtractorControls(vm)
+                    Text("Cel: ${"%+.2f".format(state.target)}°   Tolerancja: ±${state.settings.defaultTolerance}°", style = MaterialTheme.typography.bodySmall)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = targetInput,
+                            onValueChange = { targetInput = it },
+                            label = { Text("Cel") },
+                            suffix = { Text("°") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Button(onClick = { targetInput.replace(',', '.').toFloatOrNull()?.let(vm::setTarget) }, modifier = Modifier.height(44.dp)) { Text("Ustaw") }
+                    }
+                }
+            }
         }
     }
 }
@@ -348,35 +608,37 @@ fun SurfaceControls(vm: SurfaceLevelViewModel) {
 fun PlumbControls(vm: PlumbViewModel) {
     val state by vm.uiState.collectAsStateWithLifecycle()
     var confirmSave by remember { mutableStateOf(false) }
-    Row(
-        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        CompactControlButton("Zero", Icons.Default.CenterFocusStrong, vm::zero)
-        CompactControlButton(if (state.heldReading == null) "HOLD" else "Wznów", if (state.heldReading == null) Icons.Default.Pause else Icons.Default.PlayArrow, vm::toggleHold)
-        CompactControlButton(if (state.settings.soundEnabled) "Dźwięk" else "Wycisz", if (state.settings.soundEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff) { vm.setSound(!state.settings.soundEnabled) }
-        CompactControlButton(if (state.settings.vibrationEnabled) "Wibr." else "Bez wibr.", Icons.Default.Vibration) { vm.setVibration(!state.settings.vibrationEnabled) }
-        FilledTonalButton(onClick = { confirmSave = true }, modifier = Modifier.height(34.dp), contentPadding = PaddingValues(horizontal = 10.dp)) {
-            Icon(Icons.Default.Save, null, Modifier.size(16.dp))
-            Spacer(Modifier.width(5.dp))
-            Text("Zapisz", maxLines = 1)
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            CompactControlButton("Zero", Icons.Default.CenterFocusStrong, vm::zero)
+            CompactControlButton(if (state.heldReading == null) "HOLD" else "Wznów", if (state.heldReading == null) Icons.Default.Pause else Icons.Default.PlayArrow, vm::toggleHold)
+            CompactControlButton(if (state.settings.soundEnabled) "Dźwięk" else "Wycisz", if (state.settings.soundEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff) { vm.setSound(!state.settings.soundEnabled) }
+            CompactControlButton(if (state.settings.vibrationEnabled) "Wibr." else "Bez wibr.", Icons.Default.Vibration) { vm.setVibration(!state.settings.vibrationEnabled) }
+            FilledTonalButton(onClick = { confirmSave = true }, modifier = Modifier.height(34.dp), contentPadding = PaddingValues(horizontal = 10.dp)) {
+                Icon(Icons.Default.Save, null, Modifier.size(16.dp))
+                Spacer(Modifier.width(5.dp))
+                Text("Zapisz", maxLines = 1)
+            }
         }
-    }
-    Row(
-        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        listOf(0.1f, 0.2f, 0.3f, 0.5f, 1.0f).forEach { tolerance ->
-            FilterChip(
-                selected = kotlin.math.abs(state.settings.defaultTolerance - tolerance) < 0.001f,
-                onClick = { vm.setTolerance(tolerance) },
-                label = { Text("±${"%.1f".format(tolerance)}°", maxLines = 1) },
-                modifier = Modifier.height(36.dp),
-                leadingIcon = if (kotlin.math.abs(state.settings.defaultTolerance - tolerance) < 0.001f) ({ Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }) else null
-            )
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            listOf(0.1f, 0.2f, 0.3f, 0.5f, 1.0f).forEach { tolerance ->
+                FilterChip(
+                    selected = kotlin.math.abs(state.settings.defaultTolerance - tolerance) < 0.001f,
+                    onClick = { vm.setTolerance(tolerance) },
+                    label = { Text("±${"%.1f".format(tolerance)}°", maxLines = 1) },
+                    modifier = Modifier.height(36.dp),
+                    leadingIcon = if (kotlin.math.abs(state.settings.defaultTolerance - tolerance) < 0.001f) ({ Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }) else null
+                )
+            }
         }
+        state.savedMessage?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
     }
-    state.savedMessage?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
     if (confirmSave) {
         AlertDialog(
             onDismissRequest = { confirmSave = false },
@@ -390,6 +652,69 @@ fun PlumbControls(vm: PlumbViewModel) {
             },
             dismissButton = { TextButton(onClick = { confirmSave = false }) { Text("Anuluj") } }
         )
+    }
+}
+
+@Composable
+fun PlumbSideControls(vm: PlumbViewModel, modifier: Modifier = Modifier) {
+    val state by vm.uiState.collectAsStateWithLifecycle()
+    var confirmSave by remember { mutableStateOf(false) }
+    Column(
+        modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        SideControlButton("Zero", Icons.Default.CenterFocusStrong, vm::zero)
+        SideControlButton(if (state.heldReading == null) "HOLD" else "Wznów", if (state.heldReading == null) Icons.Default.Pause else Icons.Default.PlayArrow, vm::toggleHold)
+        SideControlButton(if (state.settings.soundEnabled) "Dźwięk" else "Wycisz", if (state.settings.soundEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff) { vm.setSound(!state.settings.soundEnabled) }
+        SideControlButton(if (state.settings.vibrationEnabled) "Wibr." else "Bez wibr.", Icons.Default.Vibration) { vm.setVibration(!state.settings.vibrationEnabled) }
+        FilledTonalButton(
+            onClick = { confirmSave = true },
+            modifier = Modifier.fillMaxWidth().height(31.dp),
+            contentPadding = PaddingValues(horizontal = 6.dp)
+        ) {
+            Icon(Icons.Default.Save, null, Modifier.size(15.dp))
+            Spacer(Modifier.width(4.dp))
+            Text("Zapisz", maxLines = 1, style = MaterialTheme.typography.labelSmall)
+        }
+        Spacer(Modifier.height(2.dp))
+        Text("Tolerancja", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        listOf(0.1f, 0.2f, 0.3f, 0.5f, 1.0f).forEach { tolerance ->
+            FilterChip(
+                selected = kotlin.math.abs(state.settings.defaultTolerance - tolerance) < 0.001f,
+                onClick = { vm.setTolerance(tolerance) },
+                label = { Text("±${"%.1f".format(tolerance)}°", maxLines = 1, style = MaterialTheme.typography.labelSmall) },
+                modifier = Modifier.fillMaxWidth().height(31.dp),
+                leadingIcon = if (kotlin.math.abs(state.settings.defaultTolerance - tolerance) < 0.001f) ({ Icon(Icons.Default.Check, null, Modifier.size(14.dp)) }) else null
+            )
+        }
+        state.savedMessage?.let { Text(it, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall) }
+    }
+    if (confirmSave) {
+        AlertDialog(
+            onDismissRequest = { confirmSave = false },
+            title = { Text("Zapisać pomiar pionu?") },
+            text = { Text("Do historii trafi odchylenie od pionu oraz wykryta krawędź telefonu.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmSave = false
+                    vm.savePlumb()
+                }) { Text("Zapisz") }
+            },
+            dismissButton = { TextButton(onClick = { confirmSave = false }) { Text("Anuluj") } }
+        )
+    }
+}
+
+@Composable
+fun SideControlButton(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+    FilledTonalButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().height(31.dp),
+        contentPadding = PaddingValues(horizontal = 6.dp)
+    ) {
+        Icon(icon, null, Modifier.size(15.dp))
+        Spacer(Modifier.width(4.dp))
+        Text(label, maxLines = 1, style = MaterialTheme.typography.labelSmall)
     }
 }
 
@@ -533,7 +858,7 @@ fun UnitDropdown(unit: AngleUnit, onChange: (AngleUnit) -> Unit) {
     Box {
         OutlinedButton(onClick = { expanded = true }) { Text(unit.label) }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            AngleUnit.entries.filterNot { it == AngleUnit.LUX }.forEach { DropdownMenuItem(text = { Text(it.label) }, onClick = { onChange(it); expanded = false }) }
+            AngleUnit.entries.filterNot { it == AngleUnit.LUX || it == AngleUnit.METERS || it == AngleUnit.CENTIMETERS || it == AngleUnit.SQUARE_METERS || it == AngleUnit.CUBIC_METERS }.forEach { DropdownMenuItem(text = { Text(it.label) }, onClick = { onChange(it); expanded = false }) }
         }
     }
 }
@@ -616,6 +941,10 @@ fun SlopePresetChips(unit: AngleUnit, vm: SlopeViewModel) {
             AngleUnit.CM_PER_M -> listOf("0.5 cm/m" to 0.5f, "1 cm/m" to 1f, "2 cm/m" to 2f, "3 cm/m" to 3f)
             AngleUnit.RATIO -> listOf("1:200" to 200f, "1:100" to 100f, "1:50" to 50f, "1:40" to 40f)
             AngleUnit.LUX -> emptyList()
+            AngleUnit.METERS -> emptyList()
+            AngleUnit.CENTIMETERS -> emptyList()
+            AngleUnit.SQUARE_METERS -> emptyList()
+            AngleUnit.CUBIC_METERS -> emptyList()
         }
         presets.forEach { (label, value) ->
             FilledTonalButton(
@@ -703,6 +1032,10 @@ fun unitSuffix(unit: AngleUnit): String = when (unit) {
     AngleUnit.CM_PER_M -> "cm/m"
     AngleUnit.RATIO -> "1:X"
     AngleUnit.LUX -> "lx"
+    AngleUnit.METERS -> "m"
+    AngleUnit.CENTIMETERS -> "cm"
+    AngleUnit.SQUARE_METERS -> "m²"
+    AngleUnit.CUBIC_METERS -> "m³"
 }
 
 fun normalizeProtractorDelta(value: Float): Float {

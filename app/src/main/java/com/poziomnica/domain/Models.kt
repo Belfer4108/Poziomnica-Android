@@ -7,7 +7,8 @@ enum class MeasurementType(val label: String) {
     SLOPE("Spadek"),
     PROTRACTOR("Kątomierz"),
     CAMERA("Aparat"),
-    LIGHT("Luksomierz")
+    LIGHT("Luksomierz"),
+    TAPE_MEASURE("Miarka AR")
 }
 
 data class LightReading(
@@ -25,7 +26,11 @@ enum class AngleUnit(val label: String) {
     MM_PER_M("mm/m"),
     CM_PER_M("cm/m"),
     RATIO("1:X"),
-    LUX("lx")
+    LUX("lx"),
+    METERS("m"),
+    CENTIMETERS("cm"),
+    SQUARE_METERS("m²"),
+    CUBIC_METERS("m³")
 }
 
 enum class SmoothingLevel(val label: String, val alpha: Float) {

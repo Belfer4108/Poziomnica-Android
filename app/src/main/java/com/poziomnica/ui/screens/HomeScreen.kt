@@ -36,6 +36,7 @@ fun HomeScreen(nav: NavHostController, viewModel: HomeViewModel) {
         HomeTile("Aparat", Routes.CAMERA, Icons.Default.PhotoCamera, Color(0xFF7A5CFF)),
         HomeTile("Spadek", Routes.SLOPE, Icons.Default.TrendingDown, Color(0xFFD64B4B)),
         HomeTile("Kątomierz", Routes.PROTRACTOR, Icons.Default.Architecture, Color(0xFF00897B)),
+        HomeTile("Miarka AR", Routes.TAPE_MEASURE, Icons.Default.Straighten, Color(0xFF6C63FF)),
         HomeTile("Luksomierz", Routes.LIGHT, Icons.Default.LightMode, Color(0xFFFFB300)),
         HomeTile("Przeliczniki", Routes.CALCULATORS, Icons.Default.Calculate, Color(0xFF5D6D7E))
     )

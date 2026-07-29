@@ -70,7 +70,7 @@ Ten plik sluzy do sprawdzania aplikacji przed wypchnieciem projektu na GitHub i 
 - Wejscie w kalibracje nie zamyka aplikacji.
 - Kalibracja tylnej obudowy 4 x 90 stopni zapisuje korekte.
 - Kalibracja krawedzi 2 x 180 stopni zapisuje korekte.
-- Profile kalibracji mozna aktywowac.
+- Korekty kalibracji dobieraja sie automatycznie wedlug tylnej obudowy albo aktualnie wykrytej krawedzi.
 - Przywrocenie ustawien wymaga potwierdzenia.
 
 ## 9. Ustawienia
@@ -84,6 +84,6 @@ Ten plik sluzy do sprawdzania aplikacji przed wypchnieciem projektu na GitHub i 
 ## 10. Release
 
 - `assembleDebug` konczy sie sukcesem.
-- `test` konczy sie sukcesem.
+- `test` konczy sie sukcesem w czystym srodowisku Gradle albo w GitHub Actions.
 - APK instaluje sie na telefonie.
 - Wszystkie krytyczne moduly przechodza testy z tej listy.

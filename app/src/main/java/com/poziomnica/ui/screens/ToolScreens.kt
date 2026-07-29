@@ -3,6 +3,7 @@
 package com.poziomnica.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -42,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -56,35 +59,95 @@ fun LightMeterScreen(nav: NavHostController, vm: LightMeterViewModel) {
     val reading = state.heldReading ?: state.reading
     var confirmSave by remember { mutableStateOf(false) }
     DisposableEffect(Unit) { vm.start(); onDispose { vm.stop() } }
-    ToolScaffold(nav, "Luksomierz") {
-        BigSensorValue("%.1f lx".format(reading.lux))
-        LinearProgressIndicator(progress = { min(reading.lux / 1000f, 1f) }, modifier = Modifier.fillMaxWidth())
-        Text(state.message, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MetricCard("Min", "%.1f lx".format(reading.minLux), Modifier.weight(1f))
-            MetricCard("Średnia", "%.1f lx".format(reading.averageLux), Modifier.weight(1f))
-            MetricCard("Max", "%.1f lx".format(reading.maxLux), Modifier.weight(1f))
-        }
-        Text(lightWorkHint(reading.lux), style = MaterialTheme.typography.titleMedium)
-        Text("Czujnik światła jest zwykle przy głośniku lub kamerze przedniej. Nie zasłaniaj go dłonią.", style = MaterialTheme.typography.bodySmall)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilledTonalButton(onClick = vm::toggleHold, modifier = Modifier.weight(1f).height(44.dp)) {
-                Icon(if (state.isHeld) Icons.Default.PlayArrow else Icons.Default.Pause, null)
-                Spacer(Modifier.width(6.dp))
-                Text(if (state.isHeld) "Wznów" else "HOLD", maxLines = 1)
+    Scaffold(topBar = { CompactMeasurementTopBar(nav, "Luksomierz") }) { padding ->
+        BoxWithConstraints(Modifier.padding(padding).fillMaxSize()) {
+            val portrait = maxHeight >= maxWidth
+            val tight = maxHeight < 640.dp || maxWidth < 380.dp
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(if (tight) 6.dp else 12.dp)
+                    .navigationBarsPadding(),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        state.message,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                }
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(vertical = if (portrait) 10.dp else 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(if (tight) 8.dp else 12.dp)
+                    ) {
+                        BigSensorValue("%.1f lx".format(reading.lux))
+                        LinearProgressIndicator(progress = { min(reading.lux / 1000f, 1f) }, modifier = Modifier.fillMaxWidth())
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            MetricCard("Min", "%.1f lx".format(reading.minLux), Modifier.weight(1f), compact = true)
+                            MetricCard("Średnia", "%.1f lx".format(reading.averageLux), Modifier.weight(1f), compact = true)
+                            MetricCard("Max", "%.1f lx".format(reading.maxLux), Modifier.weight(1f), compact = true)
+                        }
+                        Text(
+                            lightWorkHint(reading.lux),
+                            style = MaterialTheme.typography.titleSmall,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Text(
+                            "Czujnik światła jest zwykle przy głośniku lub kamerze przedniej. Nie zasłaniaj go dłonią.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        FilledTonalButton(
+                            onClick = vm::toggleHold,
+                            modifier = Modifier.weight(1f).height(38.dp),
+                            contentPadding = PaddingValues(horizontal = 6.dp)
+                        ) {
+                            Icon(if (state.isHeld) Icons.Default.PlayArrow else Icons.Default.Pause, null, Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(if (state.isHeld) "Wznów" else "HOLD", maxLines = 1)
+                        }
+                        FilledTonalButton(
+                            onClick = vm::resetStats,
+                            modifier = Modifier.weight(1f).height(38.dp),
+                            contentPadding = PaddingValues(horizontal = 6.dp)
+                        ) {
+                            Icon(Icons.Default.Refresh, null, Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Reset", maxLines = 1)
+                        }
+                        Button(
+                            onClick = { confirmSave = true },
+                            modifier = Modifier.weight(1f).height(38.dp),
+                            enabled = reading.available,
+                            contentPadding = PaddingValues(horizontal = 6.dp)
+                        ) {
+                            Icon(Icons.Default.Save, null, Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Zapisz", maxLines = 1)
+                        }
+                    }
+                    state.savedMessage?.let { Text(it, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall) }
+                }
             }
-            FilledTonalButton(onClick = vm::resetStats, modifier = Modifier.weight(1f).height(44.dp)) {
-                Icon(Icons.Default.Refresh, null)
-                Spacer(Modifier.width(6.dp))
-                Text("Reset", maxLines = 1)
-            }
         }
-        Button(onClick = { confirmSave = true }, modifier = Modifier.fillMaxWidth().height(48.dp), enabled = reading.available) {
-            Icon(Icons.Default.Save, null)
-            Spacer(Modifier.width(8.dp))
-            Text("Zapisz pomiar")
-        }
-        state.savedMessage?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
     }
     if (confirmSave) {
         AlertDialog(
@@ -136,11 +199,11 @@ fun BigSensorValue(text: String) {
 }
 
 @Composable
-fun MetricCard(label: String, value: String, modifier: Modifier = Modifier) {
+fun MetricCard(label: String, value: String, modifier: Modifier = Modifier, compact: Boolean = false) {
     Surface(modifier = modifier, tonalElevation = 2.dp, shape = MaterialTheme.shapes.medium) {
-        Column(Modifier.padding(12.dp)) {
-            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Column(Modifier.padding(if (compact) 8.dp else 12.dp)) {
+            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            Text(value, style = if (compact) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
         }
     }
 }

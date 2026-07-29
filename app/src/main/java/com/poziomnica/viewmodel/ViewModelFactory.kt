@@ -20,6 +20,7 @@ class ViewModelFactory(private val container: AppContainer) : ViewModelProvider.
             CalibrationViewModel::class.java -> CalibrationViewModel(container) as T
             SettingsViewModel::class.java -> SettingsViewModel(container) as T
             LightMeterViewModel::class.java -> LightMeterViewModel(container) as T
+            TapeMeasureViewModel::class.java -> TapeMeasureViewModel(container) as T
             else -> throw IllegalArgumentException("Nieznany ViewModel: ${modelClass.name}")
         }
     }

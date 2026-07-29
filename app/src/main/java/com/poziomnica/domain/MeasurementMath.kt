@@ -30,6 +30,10 @@ object MeasurementMath {
         AngleUnit.CM_PER_M -> atan((value * 10f) / 1000f).toDegrees()
         AngleUnit.RATIO -> if (abs(value) < 0.0001f) 0f else atan(1f / value).toDegrees()
         AngleUnit.LUX -> value
+        AngleUnit.METERS -> value
+        AngleUnit.CENTIMETERS -> value / 100f
+        AngleUnit.SQUARE_METERS -> value
+        AngleUnit.CUBIC_METERS -> value
     }
 
     fun formatByUnit(degrees: Float, unit: AngleUnit): String = when (unit) {
@@ -42,6 +46,10 @@ object MeasurementMath {
             if (ratio.isInfinite()) "poziom" else "1:%.0f".format(ratio)
         }
         AngleUnit.LUX -> "%.1f lx".format(degrees)
+        AngleUnit.METERS -> "%.3f m".format(degrees)
+        AngleUnit.CENTIMETERS -> "%.1f cm".format(degrees * 100f)
+        AngleUnit.SQUARE_METERS -> "%.3f m²".format(degrees)
+        AngleUnit.CUBIC_METERS -> "%.3f m³".format(degrees)
     }
 
     fun isWithinTolerance(value: Float, target: Float, tolerance: Float): Boolean =

@@ -1,6 +1,6 @@
 # Poziomnica Android
 
-Natywna aplikacja Android do pomiarow poziomu, pionu, spadku, kata i dokumentacji zdjeciowej z wykorzystaniem czujnikow telefonu oraz CameraX.
+Natywna aplikacja Android do pomiarow poziomu, pionu, spadku, kata, swiatla, miarki AR i dokumentacji zdjeciowej z wykorzystaniem czujnikow telefonu, CameraX oraz ARCore.
 
 Repozytorium:
 
@@ -53,6 +53,7 @@ Na GitHub plik APK powinien byc dolaczany jako zalacznik do sekcji **Releases**.
 - lokalna baza Room,
 - dzwiek i wibracje jako sygnal osiagniecia celu,
 - pomiar natezenia oswietlenia,
+- miarka AR z tasma rozwijana miedzy dwoma punktami na wykrytej powierzchni,
 - przeliczniki dlugosci, kata i spadku.
 
 ## Technologie
@@ -63,6 +64,7 @@ Na GitHub plik APK powinien byc dolaczany jako zalacznik do sekcji **Releases**.
 - MVVM,
 - Android Sensor API,
 - CameraX,
+- ARCore jako opcjonalny modul miarki AR,
 - Room,
 - DataStore,
 - Kotlin Coroutines i StateFlow,
@@ -114,6 +116,8 @@ Podpisany release APK:
 Plik wynikowy po przygotowaniu paczki:
 
 `dist/poziomnica.apk`
+
+Uwaga: `dist/poziomnica.apk` jest plikiem dystrybucyjnym tworzonym lokalnie i nie jest wersjonowany w Git. Na GitHub jest dolaczany jako asset do release.
 
 ## Podpisywanie
 
