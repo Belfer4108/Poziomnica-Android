@@ -50,8 +50,14 @@ git push origin v1.1.0
 
 ## Znane ograniczenie lokalnego srodowiska testowego
 
-Na tej maszynie `testDebugUnitTest` moze konczyc sie bledem uruchomienia procesu Gradle Test Executor:
+Na Windowsie, gdy projekt albo cache Gradle lezy w sciezce z polskimi znakami, `testDebugUnitTest` moze konczyc sie bledem uruchomienia procesu Gradle Test Executor:
 
 `ClassNotFoundException: worker.org.gradle.process.internal.worker.GradleWorkerMain`
 
-To jest blad startu workera testowego Gradle, nie wynik nieudanej asercji testu. Przed publikacja trzeba sprawdzic testy ponownie w Android Studio albo w GitHub Actions.
+To jest blad startu workera testowego Gradle, nie wynik nieudanej asercji testu. Lokalnie uruchom:
+
+```powershell
+.\scripts\test-local.ps1
+```
+
+Skrypt uruchamia testy z `GRADLE_USER_HOME=C:\tmp\gradle-home`, a jesli projekt jest w sciezce z nie-ASCII, tworzy tymczasowy klon w `C:\tmp\PoziomnicaTest`.

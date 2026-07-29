@@ -84,6 +84,6 @@ Ten plik sluzy do sprawdzania aplikacji przed wypchnieciem projektu na GitHub i 
 ## 10. Release
 
 - `assembleDebug` konczy sie sukcesem.
-- `test` konczy sie sukcesem w czystym srodowisku Gradle albo w GitHub Actions.
+- `.\scripts\test-local.ps1` albo testy w GitHub Actions koncza sie sukcesem.
 - APK instaluje sie na telefonie.
 - Wszystkie krytyczne moduly przechodza testy z tej listy.
